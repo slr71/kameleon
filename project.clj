@@ -15,6 +15,8 @@
   :plugins [[lein-marginalia "0.7.1"]
             [test2junit "1.1.3"]
             [jonase/eastwood "0.2.3"]]
+  :deploy-repositories [["releases" :clojars]
+                        ["snapshots" :clojars]]
   :eastwood {:exclude-namespaces [apps.protocols :test-paths]
              :linters [:wrong-arity :wrong-ns-form :wrong-pre-post :wrong-tag :misplaced-docstrings]}
   :manifest {"db-version" "2.8.0:20160728.01"})
