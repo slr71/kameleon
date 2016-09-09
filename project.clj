@@ -1,4 +1,4 @@
-(defproject org.cyverse/kameleon "2.8.1-SNAPSHOT"
+(defproject org.cyverse/kameleon "2.8.1"
   :description "Library for interacting with backend relational databases."
   :url "https://github.com/cyverse-de/kameleon"
   :license {:name "BSD"
