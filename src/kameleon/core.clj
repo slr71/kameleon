@@ -4,7 +4,7 @@
 
 (def ^:private project-clj-location
   "The location of the project.clj file within the JAR file."
-  "/META-INF/leiningen/org.iplantc/kameleon/project.clj")
+  "/META-INF/leiningen/org.cyverse/kameleon/project.clj")
 
 (defn- get-location
   "Gets the location of the source file containing this source file."
