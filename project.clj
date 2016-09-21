@@ -13,7 +13,7 @@
                  [postgresql "9.3-1102.jdbc41"]
                  [slingshot "0.12.2"]]
   :plugins [[lein-marginalia "0.7.1"]
-            [test2junit "1.1.3"]
+            [test2junit "1.2.2"]
             [jonase/eastwood "0.2.3"]]
   :deploy-repositories [["releases" :clojars]
                         ["snapshots" :clojars]]
