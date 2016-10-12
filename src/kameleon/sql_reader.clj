@@ -1,6 +1,6 @@
 (ns kameleon.sql-reader
   (:use [clojure.java.io :only [file reader]]
-        [korma.core]
+        [korma.core :exclude [update]]
         [slingshot.slingshot :only [throw+]])
   (:require [clojure.string :as string]
             [clojure.tools.logging :as log]

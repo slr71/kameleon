@@ -134,6 +134,11 @@
           :tool_count
           :external_app_count
           :task_count
+          :job_count
+          :job_count_completed
+          :job_count_failed
+          :job_last_completed
+          :last_used
           :deleted
           :disabled
           :overall_job_type))
