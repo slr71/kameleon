@@ -134,11 +134,6 @@
           :tool_count
           :external_app_count
           :task_count
-          :job_count
-          :job_count_completed
-          :job_count_failed
-          :job_last_completed
-          :last_used
           :deleted
           :disabled
           :overall_job_type))
@@ -200,6 +195,40 @@
       (add-app-group-plus-public-apps-where-clause app-group-id username public-app-ids)
       (select))))
 
+
+(defn- get-job-stats-fields
+  "Adds query fields via subselects for an app's job_count_completed and job_last_completed timestamp."
+  [query]
+  (fields query
+          [(subselect :jobs
+                      (aggregate (count :id) :job_count_completed)
+                      (where {:app_id (raw "app_listing.id::varchar")
+                              :status "Completed"}))
+           :job_count_completed]
+          [(subselect :jobs
+                      (aggregate (max :end_date) :job_last_completed)
+                      (where {:app_id (raw "app_listing.id::varchar")
+                              :status "Completed"}))
+           :job_last_completed]))
+
+(defn- get-admin-job-stats-fields
+  "Adds query fields via subselects for an app's job_count, job_count_failed, and last_used timestamp."
+  [query]
+  (fields query
+          [(subselect :jobs
+                      (aggregate (count :id) :job_count)
+                      (where {:app_id (raw "app_listing.id::varchar")}))
+           :job_count]
+          [(subselect :jobs
+                      (aggregate (count :id) :job_count_failed)
+                      (where {:app_id (raw "app_listing.id::varchar")
+                              :status "Failed"}))
+           :job_count_failed]
+          [(subselect :jobs
+                      (aggregate (max :start_date) :last_used)
+                      (where {:app_id (raw "app_listing.id::varchar")}))
+           :last_used]))
+
 (defn- get-public-group-ids-subselect
   "Gets a subselect that fetches the workspace app_categories ID, public root
    group IDs, and their subgroup IDs with the stored procedure
@@ -259,16 +288,35 @@
       first
       :total))
 
-(defn search-apps-for-user
-  "Searches Apps that contain search_term in their name or description, in all
+(defn- get-search-apps-base-query
+  "Gets the base search query for Apps that contain search_term in their name or description, in all
    public groups and groups in workspace (as returned by
    fetch-workspace-by-user-id), marking whether each app is a favorite and
    including the user's rating in each app by the user_id found in workspace."
   [search_term {workspace_id :id :as workspace} favorites_group_index query_opts]
   (-> (get-app-listing-base-query workspace favorites_group_index query_opts)
       (add-search-term-where-clauses search_term (:pre-matched-app-ids query_opts))
-      (add-search-category-where-clauses workspace_id query_opts)
+      (add-search-category-where-clauses workspace_id query_opts)))
+
+(defn search-apps-for-user
+  "Searches Apps that contain search_term in their name or description, in all
+   public groups and groups in workspace (as returned by
+   fetch-workspace-by-user-id), marking whether each app is a favorite and
+   including the user's rating in each app by the user_id found in workspace."
+  [search_term workspace favorites_group_index query_opts]
+  (-> (get-search-apps-base-query search_term workspace favorites_group_index query_opts)
       ((partial query-spy "search-apps-for-user::search_query:"))
+      select))
+
+(defn search-apps-for-admin
+  "Returns the same results as search-apps-for-user,
+   but also includes job_count, job_count_failed, job_count_completed, last_used timestamp, and
+   job_last_completed timestamp fields for each result."
+  [search_term workspace favorites_group_index query_opts]
+  (-> (get-search-apps-base-query search_term workspace favorites_group_index query_opts)
+      (get-job-stats-fields)
+      (get-admin-job-stats-fields)
+      ((partial query-spy "search-apps-for-admin::search_query:"))
       select))
 
 (defn- add-deleted-and-orphaned-where-clause
@@ -348,3 +396,14 @@
   [workspace favorites-group-index app-ids params]
   (when-not (empty? app-ids)
     (select (get-app-listing-base-query workspace favorites-group-index (assoc params :app-ids app-ids)))))
+
+(defn admin-list-apps-by-id
+  "Lists all apps with an ID in the the given app-ids list,
+   including job_count, job_count_failed, job_count_completed, last_used timestamp, and
+   job_last_completed timestamp fields for each result."
+  [workspace favorites-group-index app-ids params]
+  (when-not (empty? app-ids)
+    (-> (get-app-listing-base-query workspace favorites-group-index (assoc params :app-ids app-ids))
+        (get-job-stats-fields)
+        (get-admin-job-stats-fields)
+        select)))
