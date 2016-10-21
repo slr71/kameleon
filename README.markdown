@@ -4,6 +4,8 @@ kameleon
 Database library that uses Korma to provide access and utilities to the DE's
 backend databases.
 
+[![Clojars Project](https://img.shields.io/clojars/v/org.cyverse/kameleon.svg)](https://clojars.org/org.cyverse/kameleon)
+
 Extensions to Korma
 -------------------
 
