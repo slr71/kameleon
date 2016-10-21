@@ -200,10 +200,11 @@
   "Adds query fields via subselects for an app's job_count_completed and job_last_completed timestamp."
   [query]
   (fields query
-          [(subselect :jobs
+          [(subselect [:jobs :j]
                       (aggregate (count :id) :job_count_completed)
                       (where {:app_id (raw "app_listing.id::varchar")
-                              :status "Completed"}))
+                              :status "Completed"})
+                      (where (raw "NOT EXISTS (SELECT parent_id FROM jobs jp WHERE jp.parent_id = j.id)")))
            :job_count_completed]
           [(subselect :jobs
                       (aggregate (max :end_date) :job_last_completed)
@@ -215,14 +216,16 @@
   "Adds query fields via subselects for an app's job_count, job_count_failed, and last_used timestamp."
   [query]
   (fields query
-          [(subselect :jobs
+          [(subselect [:jobs :j]
                       (aggregate (count :id) :job_count)
-                      (where {:app_id (raw "app_listing.id::varchar")}))
+                      (where {:app_id (raw "app_listing.id::varchar")})
+                      (where (raw "NOT EXISTS (SELECT parent_id FROM jobs jp WHERE jp.parent_id = j.id)")))
            :job_count]
-          [(subselect :jobs
+          [(subselect [:jobs :j]
                       (aggregate (count :id) :job_count_failed)
                       (where {:app_id (raw "app_listing.id::varchar")
-                              :status "Failed"}))
+                              :status "Failed"})
+                      (where (raw "NOT EXISTS (SELECT parent_id FROM jobs jp WHERE jp.parent_id = j.id)")))
            :job_count_failed]
           [(subselect :jobs
                       (aggregate (max :start_date) :last_used)
