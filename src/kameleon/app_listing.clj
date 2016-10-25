@@ -260,66 +260,73 @@
   "Adds where clauses to a base App search query to restrict results to apps that
    contain search_term in the app name, app description, app integrator name, or
    the tool name."
-  [base_search_query search_term pre-matched-app-ids]
-  (let [search_term (str "%" (format-query-wildcards search_term) "%")]
-    (where base_search_query
-           (or {(sqlfn lower :name) [like (sqlfn lower search_term)]}
-               {(sqlfn lower :description) [like (sqlfn lower search_term)]}
-               {(sqlfn lower :integrator_name) [like (sqlfn lower search_term)]}
-               {:id [in pre-matched-app-ids]}
-               (get-deployed-component-search-subselect search_term)))))
+  [base-listing-query search_term pre-matched-app-ids]
+  (if (empty? search_term)
+    base-listing-query
+    (let [search_term (str "%" (format-query-wildcards search_term) "%")]
+      (where base-listing-query
+             (or {(sqlfn lower :name)            [like (sqlfn lower search_term)]}
+                 {(sqlfn lower :description)     [like (sqlfn lower search_term)]}
+                 {(sqlfn lower :integrator_name) [like (sqlfn lower search_term)]}
+                 {:id [in pre-matched-app-ids]}
+                 (get-deployed-component-search-subselect search_term))))))
 
-(defn- add-search-category-where-clauses
-  "Adds where clauses to a base App search query to restrict results to apps
-   in all public groups and groups under the given workspace_id."
-  [base_search_query workspace_id {:keys [app-ids]}]
+(defn- add-app-category-where-clause
+  "Adds a where clause to a base App listing query to restrict results to apps
+   in all public groups and groups under the given workspace_id, only if `app-ids` is empty."
+  [base-listing-query workspace_id {:keys [app-ids]}]
   (if (empty? app-ids)
-    (-> base_search_query
+    (-> base-listing-query
         (join :app_category_app {:app_category_app.app_id :app_listing.id})
         (where {:app_category_app.app_category_id
                 [in (get-public-group-ids-subselect workspace_id)]}))
-    base_search_query))
+    base-listing-query))
 
-(defn count-search-apps-for-user
-  "Counts App search results that contain search_term in their name or
-   description, in all public groups and groups under the given workspace_id."
+(defn count-apps-for-user
+  "Counts Apps in all public groups and groups under the given workspace_id.
+   If search_term is not empty, results are limited to apps that contain search_term in their name,
+   description, integrator_name, or tool name(s)."
   [search_term workspace_id {:keys [pre-matched-app-ids] :as params}]
   (-> (get-app-count-base-query params)
       (add-search-term-where-clauses search_term pre-matched-app-ids)
-      (add-search-category-where-clauses workspace_id params)
+      (add-app-category-where-clause workspace_id params)
       select
       first
       :total))
 
-(defn- get-search-apps-base-query
-  "Gets the base search query for Apps that contain search_term in their name or description, in all
-   public groups and groups in workspace (as returned by
-   fetch-workspace-by-user-id), marking whether each app is a favorite and
-   including the user's rating in each app by the user_id found in workspace."
+(defn- get-apps-base-query
+  "Gets the base query for Apps in all public groups and groups in `workspace`
+   (as returned by fetch-workspace-by-user-id),
+   marking whether each app is a favorite and including the user's rating in each app by the user_id
+   found in workspace.
+   If search_term is not empty, results are limited to apps that contain search_term in their name,
+   description, integrator_name, or tool name(s). "
   [search_term {workspace_id :id :as workspace} favorites_group_index query_opts]
   (-> (get-app-listing-base-query workspace favorites_group_index query_opts)
       (add-search-term-where-clauses search_term (:pre-matched-app-ids query_opts))
-      (add-search-category-where-clauses workspace_id query_opts)))
+      (add-app-category-where-clause workspace_id query_opts)))
 
-(defn search-apps-for-user
-  "Searches Apps that contain search_term in their name or description, in all
-   public groups and groups in workspace (as returned by
-   fetch-workspace-by-user-id), marking whether each app is a favorite and
-   including the user's rating in each app by the user_id found in workspace."
+(defn get-apps-for-user
+  "Fetches Apps in all public groups and groups in `workspace`
+   (as returned by fetch-workspace-by-user-id),
+   marking whether each app is a favorite and including the user's rating in each app by the user_id
+   found in workspace.
+   If search_term is not empty, results are limited to apps that contain search_term in their name,
+   description, integrator_name, or tool name(s)."
   [search_term workspace favorites_group_index query_opts]
-  (-> (get-search-apps-base-query search_term workspace favorites_group_index query_opts)
-      ((partial query-spy "search-apps-for-user::search_query:"))
+  (-> (get-apps-base-query search_term workspace favorites_group_index query_opts)
+      ((partial query-spy "get-apps-for-user::search_query:"))
       select))
 
-(defn search-apps-for-admin
+(defn get-apps-for-admin
   "Returns the same results as search-apps-for-user,
    but also includes job_count, job_count_failed, job_count_completed, last_used timestamp, and
    job_last_completed timestamp fields for each result."
   [search_term workspace favorites_group_index query_opts]
-  (-> (get-search-apps-base-query search_term workspace favorites_group_index query_opts)
+  (-> (get-apps-base-query search_term workspace favorites_group_index query_opts)
       (get-job-stats-fields)
       (get-admin-job-stats-fields)
-      ((partial query-spy "search-apps-for-admin::search_query:"))
+      ((partial query-spy "get-apps-for-admin::search_query:"))
       select))
 
 (defn- add-deleted-and-orphaned-where-clause
