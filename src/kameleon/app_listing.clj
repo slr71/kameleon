@@ -44,10 +44,18 @@
               (where {:app_category_app.app_category_id
                       fav_group_id_subselect})))))
 
+(defn- get-app-listing-orphaned-condition
+  []
+  (raw "NOT EXISTS (SELECT * FROM app_category_app aca WHERE aca.app_id = app_listing.id)"))
+
 (defn- add-app-id-where-clause
-  [query {:keys [app-ids]}]
+  [query {:keys [app-ids orphans public-app-ids]}]
   (if (seq app-ids)
-    (where query {:id [in app-ids]})
+    (if orphans
+      (where query (or {:id [in app-ids]}
+                       (and {:id [not-in (seq public-app-ids)]}
+                            (get-app-listing-orphaned-condition))))
+      (where query {:id [in app-ids]}))
     query))
 
 (defn- add-agave-pipeline-where-clause
@@ -308,7 +316,7 @@
    If search_term is not empty, results are limited to apps that contain search_term in their name,
    description, integrator_name, or tool name(s)."
   [search_term workspace_id {:keys [pre-matched-app-ids] :as params}]
-  (-> (get-all-apps-count-base-query params)
+  (-> (get-all-apps-count-base-query (assoc params :orphans true))
       (add-search-term-where-clauses search_term pre-matched-app-ids)
       (add-app-category-where-clause workspace_id params)
       select
@@ -334,7 +342,7 @@
    job_count_failed, job_count_completed, last_used timestamp, and job_last_completed timestamp fields
    for each result."
   [search_term {workspace_id :id :as workspace} favorites_group_index query_opts]
-  (-> (get-all-apps-listing-base-query workspace favorites_group_index query_opts)
+  (-> (get-all-apps-listing-base-query workspace favorites_group_index (assoc query_opts :orphans true))
       (add-search-term-where-clauses search_term (:pre-matched-app-ids query_opts))
       (add-app-category-where-clause workspace_id query_opts)
       (get-job-stats-fields)
@@ -347,7 +355,8 @@
   (where query
     (or {:deleted true
          :id      [in (seq public-app-ids)]}
-      (raw "NOT EXISTS (SELECT * FROM app_category_app aca WHERE aca.app_id = app_listing.id)"))))
+        (and (get-app-listing-orphaned-condition)
+             {:id [not-in (seq public-app-ids)]}))))
 
 (defn count-deleted-and-orphaned-apps
   "Counts the number of deleted, public apps, plus apps that are not listed under any category."
