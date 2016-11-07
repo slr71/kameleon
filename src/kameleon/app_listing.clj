@@ -44,10 +44,18 @@
               (where {:app_category_app.app_category_id
                       fav_group_id_subselect})))))
 
+(defn- get-app-listing-orphaned-condition
+  []
+  (raw "NOT EXISTS (SELECT * FROM app_category_app aca WHERE aca.app_id = app_listing.id)"))
+
 (defn- add-app-id-where-clause
-  [query {:keys [app-ids]}]
+  [query {:keys [app-ids orphans public-app-ids]}]
   (if (seq app-ids)
-    (where query {:id [in app-ids]})
+    (if orphans
+      (where query (or {:id [in app-ids]}
+                       (and {:id [not-in (seq public-app-ids)]}
+                            (get-app-listing-orphaned-condition))))
+      (where query {:id [in app-ids]}))
     query))
 
 (defn- add-agave-pipeline-where-clause
@@ -90,16 +98,20 @@
          {:integrator_username username
           :id                  [in public-app-ids]}))
 
-(defn- get-app-count-base-query
+(defn- get-all-apps-count-base-query
   "Returns a base query for counting the total number of apps in the
    app_listing table."
   [query-opts]
-  (->
-    (select* app_listing)
-    (fields (raw "count(DISTINCT app_listing.id) AS total"))
-    (where {:deleted false})
-    (add-app-id-where-clause query-opts)
-    (add-agave-pipeline-where-clause query-opts)))
+  (-> (select* app_listing)
+      (fields (raw "count(DISTINCT app_listing.id) AS total"))
+      (add-app-id-where-clause query-opts)
+      (add-agave-pipeline-where-clause query-opts)))
+
+(defn- get-app-count-base-query
+  "Adds a where clause to the get-all-apps-count-base-query, filtering out `deleted` apps."
+  [query-opts]
+  (-> (get-all-apps-count-base-query query-opts)
+      (where {:deleted false})))
 
 (defn count-apps-in-group-for-user
   "Counts all of the apps in an app group and all of its descendents."
@@ -158,7 +170,7 @@
                  (= :ratings.user_id
                     user-id)))))
 
-(defn- get-app-listing-base-query
+(defn- get-all-apps-listing-base-query
   "Gets an app_listing select query, setting any query limits and sorting
    found in the query_opts, using the given workspace (as returned by
    fetch-workspace-by-user-id) to mark whether each app is a favorite and to
@@ -175,12 +187,17 @@
         (add-app-listing-base-query-fields)
         (add-app-listing-is-favorite-field workspace_root_group_id favorites_group_index)
         (add-app-listing-ratings-fields user_id)
-        (where {:deleted false})
         (add-app-id-where-clause query_opts)
         (add-agave-pipeline-where-clause query_opts)
         (add-query-limit row_limit)
         (add-query-offset row_offset)
         (add-query-sorting sort_field sort_dir))))
+
+(defn- get-app-listing-base-query
+  "Adds a where clause to the get-all-apps-listing-base-query, filtering out `deleted` apps."
+  [workspace favorites_group_index query_opts]
+  (-> (get-all-apps-listing-base-query workspace favorites_group_index query_opts)
+      (where {:deleted false})))
 
 (defn get-apps-in-group-for-user
   "Lists all of the apps in an app group and all of its descendents, using the
@@ -294,17 +311,17 @@
       first
       :total))
 
-(defn- get-apps-base-query
-  "Gets the base query for Apps in all public groups and groups in `workspace`
-   (as returned by fetch-workspace-by-user-id),
-   marking whether each app is a favorite and including the user's rating in each app by the user_id
-   found in workspace.
+(defn count-apps-for-admin
+  "Counts Apps in all public groups and groups under the given workspace_id.
    If search_term is not empty, results are limited to apps that contain search_term in their name,
-   description, integrator_name, or tool name(s). "
-  [search_term {workspace_id :id :as workspace} favorites_group_index query_opts]
-  (-> (get-app-listing-base-query workspace favorites_group_index query_opts)
-      (add-search-term-where-clauses search_term (:pre-matched-app-ids query_opts))
-      (add-app-category-where-clause workspace_id query_opts)))
+   description, integrator_name, or tool name(s)."
+  [search_term workspace_id {:keys [pre-matched-app-ids] :as params}]
+  (-> (get-all-apps-count-base-query (assoc params :orphans true))
+      (add-search-term-where-clauses search_term pre-matched-app-ids)
+      (add-app-category-where-clause workspace_id params)
+      select
+      first
+      :total))
 
 (defn get-apps-for-user
   "Fetches Apps in all public groups and groups in `workspace`
@@ -313,17 +330,21 @@
    found in workspace.
    If search_term is not empty, results are limited to apps that contain search_term in their name,
    description, integrator_name, or tool name(s)."
-  [search_term workspace favorites_group_index query_opts]
-  (-> (get-apps-base-query search_term workspace favorites_group_index query_opts)
+  [search_term {workspace_id :id :as workspace} favorites_group_index query_opts]
+  (-> (get-app-listing-base-query workspace favorites_group_index query_opts)
+      (add-search-term-where-clauses search_term (:pre-matched-app-ids query_opts))
+      (add-app-category-where-clause workspace_id query_opts)
       ((partial query-spy "get-apps-for-user::search_query:"))
       select))
 
 (defn get-apps-for-admin
-  "Returns the same results as search-apps-for-user,
-   but also includes job_count, job_count_failed, job_count_completed, last_used timestamp, and
-   job_last_completed timestamp fields for each result."
-  [search_term workspace favorites_group_index query_opts]
-  (-> (get-apps-base-query search_term workspace favorites_group_index query_opts)
+  "Returns the same results as get-apps-for-user, but also includes deleted apps and job_count,
+   job_count_failed, job_count_completed, last_used timestamp, and job_last_completed timestamp fields
+   for each result."
+  [search_term {workspace_id :id :as workspace} favorites_group_index query_opts]
+  (-> (get-all-apps-listing-base-query workspace favorites_group_index (assoc query_opts :orphans true))
+      (add-search-term-where-clauses search_term (:pre-matched-app-ids query_opts))
+      (add-app-category-where-clause workspace_id query_opts)
       (get-job-stats-fields)
       (get-admin-job-stats-fields)
       ((partial query-spy "get-apps-for-admin::search_query:"))
@@ -334,7 +355,8 @@
   (where query
     (or {:deleted true
          :id      [in (seq public-app-ids)]}
-      (raw "NOT EXISTS (SELECT * FROM app_category_app aca WHERE aca.app_id = app_listing.id)"))))
+        (and (get-app-listing-orphaned-condition)
+             {:id [not-in (seq public-app-ids)]}))))
 
 (defn count-deleted-and-orphaned-apps
   "Counts the number of deleted, public apps, plus apps that are not listed under any category."
