@@ -18,5 +18,4 @@
   :deploy-repositories [["releases" :clojars]
                         ["snapshots" :clojars]]
   :eastwood {:exclude-namespaces [apps.protocols :test-paths]
-             :linters [:wrong-arity :wrong-ns-form :wrong-pre-post :wrong-tag :misplaced-docstrings]}
-  :manifest {"db-version" "2.9.0:20161007.01"})
+             :linters [:wrong-arity :wrong-ns-form :wrong-pre-post :wrong-tag :misplaced-docstrings]})

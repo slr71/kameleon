@@ -1,6 +1,5 @@
 (ns kameleon.queries
-  (:use [kameleon.core]
-        [korma.core :exclude [update]]
+  (:use [korma.core :exclude [update]]
         [korma.db :only [transaction]]
         [slingshot.slingshot :only [throw+]]))
 
