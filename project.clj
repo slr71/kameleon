@@ -11,6 +11,7 @@
                   :exclusions [c3p0]]
                  [me.raynes/fs "1.4.6"]
                  [postgresql "9.3-1102.jdbc41"]
+                 [com.impossibl.pgjdbc-ng/pgjdbc-ng "0.7.1"]
                  [slingshot "0.12.2"]]
   :plugins [[lein-marginalia "0.7.1"]
             [test2junit "1.2.2"]
