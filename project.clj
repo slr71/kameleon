@@ -1,4 +1,4 @@
-(defproject org.cyverse/kameleon "3.0.3-SNAPSHOT"
+(defproject org.cyverse/kameleon "3.0.3"
   :description "Library for interacting with backend relational databases."
   :url "https://github.com/cyverse-de/kameleon"
   :license {:name "BSD"
@@ -10,7 +10,7 @@
                  [korma "0.4.2"
                   :exclusions [c3p0]]
                  [me.raynes/fs "1.4.6"]
-                 [postgresql "9.3-1102.jdbc41"]
+                 [org.postgresql/postgresql "42.2.4"]
                  [com.impossibl.pgjdbc-ng/pgjdbc-ng "0.7.1"]
                  [slingshot "0.12.2"]]
   :plugins [[lein-marginalia "0.7.1"]
