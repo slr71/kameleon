@@ -51,3 +51,18 @@
                      :ASC)]
       (order select_query sort-field sort-dir))
     select_query))
+
+(defmacro conditional-where
+  "Adds a where clause to a query only if the specified condition is met. For example, suppose
+   that you have a function that lists orders, optionally filtering orders by customer ID.
+   Something like this might work for that:
+
+     (defn list-orders [customer-id]
+       (-> (select* :orders)
+           (conditional-where customer-id {:customer_id customer-id})
+           select))
+  "
+  [query condition-form clause-form]
+  `(if ~condition-form
+     (where ~query ~clause-form)
+     ~query))
