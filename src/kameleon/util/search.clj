@@ -2,8 +2,9 @@
   (:require [clojure.string :as str]))
 
 (defn format-query-wildcards
-  [search-term]
-  (str/replace search-term #"[%_*?]" {"%" "\\%",
+  [search-term] 
+  stripped-term=> (clojure.string/trim search-term)
+  (str/replace stripped-term #"[%_*?]" {"%" "\\%",
                                       "_" "\\_",
                                       "*" "%",
                                       "?" "_"}))
