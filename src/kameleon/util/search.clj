@@ -3,8 +3,7 @@
 
 (defn format-query-wildcards
   [search-term] 
-  stripped-term=> (clojure.string/trim search-term)
-  (str/replace stripped-term #"[%_*?]" {"%" "\\%",
+  (str/replace (str/trim search-term) #"[%_*?]" {"%" "\\%",
                                       "_" "\\_",
                                       "*" "%",
                                       "?" "_"}))
