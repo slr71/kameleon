@@ -4,6 +4,6 @@
 (defn format-query-wildcards
   [search-term]
   (str/replace (str/trim search-term) #"[%_*?]" {"%" "\\%",
-                                      "_" "\\_",
-                                      "*" "%",
-                                      "?" "_"}))
+                                                 "_" "\\_",
+                                                 "*" "%",
+                                                 "?" "_"}))
