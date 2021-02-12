@@ -3,7 +3,7 @@
 
 (defn format-query-wildcards
   [search-term]
-  (str/replace search-term #"[%_*?]" {"%" "\\%",
-                                      "_" "\\_",
-                                      "*" "%",
-                                      "?" "_"}))
+  (str/replace (str/trim search-term) #"[%_*?]" {"%" "\\%",
+                                                 "_" "\\_",
+                                                 "*" "%",
+                                                 "?" "_"}))
