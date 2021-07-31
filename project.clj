@@ -6,7 +6,7 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/tools.logging "0.3.1"]
                  [clj-time "0.11.0"]
-                 [com.mchange/c3p0 "0.9.5.1"]
+                 [com.mchange/c3p0 "0.9.5.4"]
                  [korma "0.4.2"
                   :exclusions [c3p0]]
                  [me.raynes/fs "1.4.6"]
