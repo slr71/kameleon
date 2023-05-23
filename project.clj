@@ -3,17 +3,18 @@
   :url "https://github.com/cyverse-de/kameleon"
   :license {:name "BSD"
             :url "http://iplantcollaborative.org/sites/default/files/iPLANT-LICENSE.txt"}
-  :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/tools.logging "0.3.1"]
-                 [clj-time "0.11.0"]
-                 [com.mchange/c3p0 "0.9.5.4"]
-                 [korma "0.4.2"
+  :dependencies [[org.clojure/clojure "1.11.1"]
+                 [org.clojure/tools.logging "1.2.4"]
+                 [clj-time "0.15.2"]
+                 [com.mchange/c3p0 "0.9.5.5"]
+                 [korma "0.4.3"
                   :exclusions [c3p0]]
                  [me.raynes/fs "1.4.6"]
-                 [org.postgresql/postgresql "42.2.4"]
-                 [com.impossibl.pgjdbc-ng/pgjdbc-ng "0.7.1"]
+                 [org.postgresql/postgresql "42.6.0"]
+                 [com.impossibl.pgjdbc-ng/pgjdbc-ng "0.8.9"]
                  [slingshot "0.12.2"]]
-  :plugins [[lein-marginalia "0.7.1"]
+  :plugins [[lein-ancient "0.7.0"]
+            [lein-marginalia "0.7.1"]
             [test2junit "1.2.2"]
             [jonase/eastwood "0.2.3"]]
   :deploy-repositories [["releases" :clojars]
