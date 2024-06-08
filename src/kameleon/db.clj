@@ -1,8 +1,7 @@
 (ns kameleon.db
   (:use [korma.core :exclude [update]]
         [korma.db])
-  (:require [clj-time.coerce :as tc]
-            [clj-time.core :as t]
+  (:require [clj-time.core :as t]
             [clj-time.format :as tf]
             [clojure.string :as string])
   (:import [java.sql Timestamp]))
@@ -17,7 +16,7 @@
     "YYYY MMM dd HH:mm:ss"
     "YYYY-MM-dd-HH-mm-ss.SSS"
     "YYYY-MM-dd HH:mm:ss.SSS"
-    "YYYY-MM-dd'T'HH:mm:ss.SSSZ"))
+    "YYYY-MM-dd'T'HH:mm:ss.SSSSSSSSSZ"))
 
 (defn- strip-time-zone
   "Removes the time zone abbreviation from a date timestamp."
