@@ -1,8 +1,8 @@
-(defproject org.cyverse/kameleon "3.0.10-SNAPSHOT"
+(defproject org.cyverse/kameleon "3.0.10"
   :description "Library for interacting with backend relational databases."
   :url "https://github.com/cyverse-de/kameleon"
   :license {:name "BSD"
-            :url "http://iplantcollaborative.org/sites/default/files/iPLANT-LICENSE.txt"}
+            :url "https://cyverse.org/license"}
   :dependencies [[org.clojure/clojure "1.11.3"]
                  [org.clojure/tools.logging "1.3.0"]
                  [clj-time "0.15.2"]
