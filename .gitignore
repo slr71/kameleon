@@ -17,3 +17,6 @@ pom.xml.asc
 test2junit
 build.xml
 *.iml
+.clj-kondo
+.eastwood
+.lsp
