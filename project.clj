@@ -4,13 +4,13 @@
   :license {:name "BSD"
             :url "https://cyverse.org/license"}
   :dependencies [[org.clojure/clojure "1.12.5"]
-                 [org.clojure/tools.logging "1.3.0"]
+                 [org.clojure/tools.logging "1.3.1"]
                  [clj-time "0.15.2"]
                  [com.mchange/c3p0 "0.10.1"]
                  [korma "0.4.3"
                   :exclusions [c3p0]]
                  [me.raynes/fs "1.4.6"]
-                 [org.postgresql/postgresql "42.7.3"]
+                 [org.postgresql/postgresql "42.7.13"]
                  [com.impossibl.pgjdbc-ng/pgjdbc-ng "0.8.9"]
                  [slingshot "0.12.2"]]
   :plugins [[lein-ancient "1.0.0"]
