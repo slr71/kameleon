@@ -3,6 +3,9 @@
   :url "https://github.com/cyverse-de/kameleon"
   :license {:name "BSD"
             :url "https://cyverse.org/license"}
+  ;; Fail the build on a new dependency conflict rather than printing a
+  ;; warning nobody reads.
+  :pedantic? :abort
   :dependencies [[org.clojure/clojure "1.12.5"]
                  [org.clojure/tools.logging "1.3.1"]
                  [clj-time "0.15.2"]
